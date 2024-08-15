@@ -8,7 +8,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173,http://localhost:80 ",
+    origin: ["http://localhost:5173","http://localhost:80"],
     methods: ["GET", "POST", "PUT"],
     credentials: true,
   })
@@ -17,7 +17,7 @@ app.use(
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:80, http://localhost:5173",
+    origin: ["http://localhost:5173", "http://localhost:80"],
     methods: ["GET", "POST", "PUT"],
     credentials: true,
   },
@@ -26,7 +26,10 @@ const io = new Server(server, {
 const users = new Set(); // To store online users
 
 // app.use(express.static(path.join(__dirname, 'public')));
-
+app.get("/users", (req, res)=>{
+  console.log("hi")
+  res.json(Array.from(users));
+})
 // Handle Socket.IO connections
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
@@ -41,6 +44,7 @@ io.on("connection", (socket) => {
 
   // Handle incoming calls
   socket.on("outgoing:call", (data) => {
+   // console.log(data, "hello");
     io.to(data.to).emit("incoming:call", {
       from: socket.id,
       offer: data.fromOffer,
@@ -48,9 +52,25 @@ io.on("connection", (socket) => {
   });
 
   // Handle incoming answers
+  // socket.on("call:accepted", (data) => {
+  //   console.log("A user accepted:", data)
+  //   io.to(data.to).emit("incoming:answer", { offer: data.answer });
+  //   console.log("emmited")
+  // });
+
+
   socket.on("call:accepted", (data) => {
-    io.to(data.to).emit("incoming:answer", { offer: data.answer });
+    console.log("A user accepted the call:", data);
+    const { accept } = data;
+
+    if (accept && accept.from) {
+      io.to(accept.from).emit("incoming:answer", { answer: accept.answer });
+      console.log("Emitted incoming:answer to:", accept.from);
+    }
   });
+
+    
+  
 
   // Handle user disconnections
   socket.on("disconnect", () => {
