@@ -70,7 +70,8 @@ const App = () => {
   useEffect(() => {
     // Initialize socket and peer connection
     socket.current = Socket;
-  
+   
+    if(!peer.current){
     peer.current = new RTCPeerConnection({
       iceServers: [
         {
@@ -81,6 +82,7 @@ const App = () => {
         },
       ],
     });
+  }
     
 
 
