@@ -31,46 +31,111 @@ app.get("/users", (req, res)=>{
   res.json(Array.from(users));
 })
 // Handle Socket.IO connections
+// io.on("connection", (socket) => {
+//   console.log("A user connected:", socket.id);
+
+//   // Notify other users that a new user has joined
+//   users.add(socket.id);
+//   io.emit("users:joined", socket.id);
+
+//   // Send the current list of users to the newly connected user
+//   socket.emit("hello", { id: socket.id });
+//   io.emit("users:update", Array.from(users));
+
+//   // Handle incoming calls
+//   socket.on("outgoing:call", (data) => {
+//    // console.log(data, "hello");
+//     io.to(data.to).emit("incoming:call", {
+//       from: socket.id,
+//       offer: data.fromOffer,
+//     });
+//   });
+
+//   // Handle incoming answers
+//   // socket.on("call:accepted", (data) => {
+//   //   console.log("A user accepted:", data)
+//   //   io.to(data.to).emit("incoming:answer", { offer: data.answer });
+//   //   console.log("emmited")
+//   // });
+
+
+//   socket.on("call:accepted", (data) => {
+//     console.log("A user accepted the call:", data);
+//     const { accept } = data;
+
+//     if (accept && accept.from) {
+//       io.to(accept.from).emit("incoming:answer", { answer: accept.answer });
+//       console.log("Emitted incoming:answer to:", accept.from);
+//     }
+//   });
+
+    
+  
+
+//   // Handle user disconnections
+//   socket.on("disconnect", () => {
+//     console.log("User disconnected:", socket.id);
+//     users.delete(socket.id);
+//     io.emit("user:disconnect", socket.id);
+//     io.emit("users:update", Array.from(users));
+//   });
+// });
+
+
+// Handle Socket.IO connections
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
   // Notify other users that a new user has joined
   users.add(socket.id);
   io.emit("users:joined", socket.id);
-
+  console.log("user joined:", socket.id);
   // Send the current list of users to the newly connected user
   socket.emit("hello", { id: socket.id });
   io.emit("users:update", Array.from(users));
 
   // Handle incoming calls
   socket.on("outgoing:call", (data) => {
-   // console.log(data, "hello");
+    console.log("outgoing call");
     io.to(data.to).emit("incoming:call", {
       from: socket.id,
       offer: data.fromOffer,
     });
   });
 
-  // Handle incoming answers
-  // socket.on("call:accepted", (data) => {
-  //   console.log("A user accepted:", data)
-  //   io.to(data.to).emit("incoming:answer", { offer: data.answer });
-  //   console.log("emmited")
-  // });
-
-
-  socket.on("call:accepted", (data) => {
-    console.log("A user accepted the call:", data);
-    const { accept } = data;
-
-    if (accept && accept.from) {
-      io.to(accept.from).emit("incoming:answer", { answer: accept.answer });
-      console.log("Emitted incoming:answer to:", accept.from);
-    }
+  socket.on("call:rejected", (data) => {
+    const { to } = data;
+    // Notify the caller that the call was rejected
+    io.to(to).emit("call:rejected", {
+      message: "Call was rejected by the recipient.",
+    });
+    console.log(`Call rejected by ${socket.id}, notifying ${to}`);
   });
 
-    
-  
+  socket.on("mute", (data) => {
+    // Broadcast the mute/unmute event to other users
+    socket.broadcast.emit("user-muted", {
+      userId: socket.id,
+      isMuted: data.isMuted,
+    });
+    console.log("muted");
+  });
+
+  // Handle incoming answers
+  socket.on("call:accepted", (data) => {
+    console.log("call   accepted");
+    io.to(data.to).emit("incoming:answer", { offer: data.answer });
+  });
+
+  socket.on("error", (err) => {
+    console.log(err);
+  });
+
+  socket.on('call:hangup', ({ to }) => {
+    // Notify the other peer that the call has been hung up
+    io.to(to).emit('call:hangup');
+    console.log(`Call hung up by ${socket.id}, notifying ${to}`);
+  });
 
   // Handle user disconnections
   socket.on("disconnect", () => {
