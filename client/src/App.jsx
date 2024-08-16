@@ -72,7 +72,14 @@ const App = () => {
     socket.current = Socket;
   
     peer.current = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.stunprotocol.org" }],
+      iceServers: [
+        {
+          urls: [
+            "stun:stun.l.google.com:19302",
+            "stun:global.stun.twilio.com:3478",
+          ],
+        },
+      ],
     });
     
 
