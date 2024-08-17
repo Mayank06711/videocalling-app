@@ -3,6 +3,8 @@ import { Socket } from "./socket/socket";
 import Button from "@mui/material/Button";
 import UserList from "./components/User";
 import VideoPlayer from "./components/Video";
+import {io} from "socket.io-client";
+
 
 const App = () => {
   const [myId, setMyId] = useState("");
@@ -27,6 +29,12 @@ const App = () => {
   
 
   let myStream;
+
+
+
+
+
+
 
 
   async function acceptCall() {
@@ -70,6 +78,7 @@ const App = () => {
   useEffect(() => {
     // Initialize socket and peer connection
     socket.current = Socket;
+    
    
     if(!peer.current){
     peer.current = new RTCPeerConnection({
