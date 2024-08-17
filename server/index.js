@@ -9,9 +9,9 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "http://localhost:80",
-      "https://video-call-mayank.s3.ap-south-1.amazonaws.com",
+      "http://localhost:5173", //// Local development server
+      "http://localhost:80",// Nginx server serving frontend
+      "https://video-call-mayank.s3.ap-south-1.amazonaws.com", //// S3 URL
     ],
     methods: ["GET", "POST", "PUT"],
     credentials: true,
