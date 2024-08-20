@@ -4,7 +4,7 @@ import UserList from "./components/User";
 import VideoPlayer from "./components/Video";
 import { io } from "socket.io-client";
 
-const Apps = () => {
+const App2 = () => {
   const [myId, setMyId] = useState("");
   const [recId, setRecId] = useState("");
   const [status, setStatus] = useState("");
@@ -30,6 +30,8 @@ const Apps = () => {
   const [myStream1, setMyStream1] = useState() // har jagah ye rhega
   const [remoteStream1, setRemoteStream1] = useState() // keval ek jagah ye aaega dusre ka 
 
+
+  
   let myStream;
 
 
@@ -40,6 +42,60 @@ const Apps = () => {
   }, [myStream1]);
 
 
+
+  const handleCall = useCallback(async () => {
+    try {
+      console.log("trying to accept call");
+      console.log(dataC);
+      const { from, offer } = dataC;
+  
+      // Set the remote description with the offer received from the caller
+      await peer.current.setRemoteDescription(new RTCSessionDescription(offer));
+  
+      // Create an answer and set the local description
+      const answerOffer = await peer.current.createAnswer();
+      await peer.current.setLocalDescription(new RTCSessionDescription(answerOffer));
+  
+      // Emit the call accepted event to the server
+      socket.current.emit("call:accepted", { answer: answerOffer, to: from });
+  
+      // Get the user's media stream (just for audio or video if needed)
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true, // You can set this to `false` if you only want to accept audio
+        audio: true,
+      });
+  
+      // Add tracks from the stream to the peer connection
+      stream.getTracks().forEach((track) => peer.current.addTrack(track, stream));
+      
+      setRemoteStream1(stream);
+
+      // Set the incoming stream to the remote video element
+      peer.current.ontrack = ({ streams: [remoteStream] }) => {
+        if (remoteVideoRef.current) {
+          console.log("Remote video", remoteStream)
+          remoteVideoRef.current.srcObject = remoteStream;
+          remoteVideoRef.current
+            .play()
+            .catch((err) =>
+              console.error("Error playing the remote stream", err)
+            );
+        }
+      };
+  
+      setCallRunning(true);
+      setCallFrom(from);
+      setRemoteStream1(stream);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [dataC]);
+  
+
+   
+  const callingAccept = ()=>{
+    handleCall(); 
+  }
 
 
   async function acceptCall() {
@@ -80,14 +136,10 @@ const Apps = () => {
   const rejectCall = () => {
     const { from } = dataC;
     const message =
-      selectedMessage === "custom" ? customMessage : selectedMessage;
+    selectedMessage === "custom" ? customMessage : selectedMessage;
     socket.current.emit("call:rejected", { to: from, msg: message });
     setStatus("Call rejected");
   };
-
-
-
-
 
 
 
@@ -103,7 +155,8 @@ const Apps = () => {
     socket.current = io('http://localhost:5000', {
             query: { userName: userName }, // Send the name as a query parameter
     });
-
+    
+    
 
     socket.current.on('updateUserList', (users) => {
             setOnlineUsers(users);
@@ -148,7 +201,7 @@ const Apps = () => {
       const getLocalMedia = async () => {
         try {
           const myStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+           video: true,
             audio: true,
           });
 
@@ -273,7 +326,7 @@ const Apps = () => {
         // setRecId(data.toWhome)
         setisReceiverOrCallerStatus("Caller ");
         setRecId(data.from);
-        setDataC(data);
+        setDataC(data); //  data has from toWhome and offfer
         setCallFrom(data.from);
         setCallRunning(false);
       });
@@ -301,6 +354,7 @@ const Apps = () => {
       };
     }
   }, [connected]);
+
 
   const createCall = async (to) => {
     setStatus(`Calling ${to}`);
@@ -363,6 +417,7 @@ const Apps = () => {
     console.log("call ended");
   };
 
+
   console.log(muted, "Call mutes");
 
   const handleSubmit = (e)=>{
@@ -370,7 +425,7 @@ const Apps = () => {
     setConected(true);
   }
 
-  console.log(remoteVideoRef, "Remote video")
+  
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex-grow p-5">
@@ -417,8 +472,6 @@ const Apps = () => {
               title={`${isReceiverOrCallerStatus} Id ${recId}`}
               statusMessage={callerVoiceStatus}
               color={"blue"}
-              autoPlay 
-              playsInline
             />}
             <p id="status" className="text-center text-cyan-800">
               {status}
@@ -428,6 +481,7 @@ const Apps = () => {
       </div>
 
       {callRunning || callFrom ? (
+        
         <div className="fixed bottom-0 left-0 right-0 bg-gray-800 p-3 flex justify-center gap-4">
           <Button variant="contained" onClick={() => setShow(true)}>
             Show Users
@@ -485,7 +539,7 @@ const Apps = () => {
                   />
                 )}
               </div>
-              <Button variant="contained" onClick={acceptCall}>
+              <Button variant="contained" onClick={callingAccept}>
                 Accept
               </Button>
               <Button
@@ -501,7 +555,10 @@ const Apps = () => {
             </>
           )}
         </div>
-      ) : (
+      ) 
+      : 
+      (
+
         <div className="fixed bottom-0 left-0 right-0 bg-gray-800 p-3 flex justify-center gap-4">
           <Button variant="contained" onClick={() => setShow(true)}>
             Show Users
@@ -511,9 +568,10 @@ const Apps = () => {
             Hide Users
           </Button>
         </div>
+      
       )}
     </div>
   );
 };
 
-export default Apps;
+export default App2;

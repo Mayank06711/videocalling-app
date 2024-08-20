@@ -11,7 +11,7 @@ app.use(
     origin: [
       "http://localhost:5173", //// Local development server
       "http://localhost:80",// Nginx server serving frontend
-      "https://video-call-mayank.s3.ap-south-1.amazonaws.com", //// S3 URL
+      "https://video-call-mayank.s3.ap-south-1.amazonaws.com/index.html", //// S3 URL
     ],
     methods: ["GET", "POST", "PUT"],
     credentials: true,
@@ -65,11 +65,11 @@ io.on("connection", (socket) => {
 
   // Handle incoming calls
   socket.on("outgoing:call", (data) => {
-    console.log("outgoing call");
+    console.log("outgoing call", data.fromOffer); // caller sends his offer after setting it into his setlocalDescriptionSession
     io.to(data.to).emit("incoming:call", {
       from: socket.id, // who called that someone who emitted started call
       toWhome: data.to, //  to whome this outgoing call was for
-      offer: data.fromOffer,
+      offer: data.fromOffer, // this should be set as remote
     });
   });
 
@@ -105,7 +105,7 @@ io.on("connection", (socket) => {
   // Handle incoming answers
   socket.on("call:accepted", (data) => {
     console.log("call   accepted");
-    io.to(data.to).emit("incoming:answer", { offer: data.answer });
+    io.to(data.to).emit("incoming:answer", { offer: data.answer, from:socket.id });
   });
 
   socket.on("error", (err) => {
@@ -135,6 +135,12 @@ io.on("connection", (socket) => {
     io.emit("user:disconnect", socket.id);
     // io.emit("users:update", Array.from(users));
   });
+
+
+
+  
+
+
 });
 
 function updateOnlineUsers() {
@@ -159,6 +165,33 @@ function updateOnlineUsers() {
       console.error("Error fetching online users from Redis:", err);
     });
 }
+
+function deleteAllOnlineUsers() {
+  redisClient.sMembers('onlineUsers')
+    .then((onlineUsers) => {
+      if (onlineUsers.length === 0) {
+        console.log("No users to delete.");
+        return;
+      }
+
+      // Delete all users from the onlineUsers set
+      redisClient.del('onlineUsers')
+        .then((deleted) => {
+          console.log(`Deleted ${onlineUsers.length} users from Redis.`);
+          
+          // Optionally, emit an update to the frontend
+          io.emit('updateUserList', []);
+        })
+        .catch((err) => {
+          console.error("Error deleting online users from Redis:", err);
+        });
+    })
+    .catch((err) => {
+      console.error("Error fetching online users from Redis:", err);
+    });
+}
+
+// deleteAllOnlineUsers()
 
 
 const PORT = process.env.PORT || 5000;
