@@ -143,6 +143,51 @@ const App2 = () => {
 
 
 
+   // Function to handle the incoming stream
+const handleIncomingStream = (stream, remoteVideoRef) => {
+  console.log("Incoming Stream", stream, remoteVideoRef.current);
+
+  if (stream) {
+    logExistingTracks(stream);
+    attachTrackAddedListener(stream);
+  }
+
+  setRemoteVideoStream(remoteVideoRef, stream);
+}
+
+// Function to log existing tracks in the stream
+const logExistingTracks = (stream) => {
+  console.log("Incoming Streams xtc", stream.length)
+  stream.getTracks().forEach(track => {
+    console.log("Existing track:", track);
+  });
+}
+
+// Function to attach a listener for added tracks
+const attachTrackAddedListener = (stream) => {
+  stream.onaddtrack = (event) => {
+    console.log("Track added:", event.track);
+  }
+}
+
+// Function to set the remote video element's stream
+const setRemoteVideoStream = (remoteVideoRef, stream) => {
+  if (remoteVideoRef.current && stream) {
+    if (remoteVideoRef.current.srcObject !== stream) {
+      remoteVideoRef.current.srcObject = stream;
+    }
+    
+    remoteVideoRef.current.onloadedmetadata = () => {
+      remoteVideoRef.current
+        .play()
+        .catch((err) =>
+          console.error("Error playing the remote stream: line 141", err)
+        );
+    };
+  }
+}
+
+
 
 
 
@@ -228,38 +273,45 @@ const App2 = () => {
       // Capture local media when component mounts
       getLocalMedia();
 
-     // Set up the ontrack handler for incoming remote media
-      peer.current.ontrack = ({ streams: [stream] }) => {
-        setStatus("Incoming Stream");
-        console.log("Incoming Stream", stream, remoteVideoRef.current);
-        if (stream) {
-          stream.getTracks().forEach(track => {
-         console.log("Existing track:", track);
-    });
-          stream.onaddtrack = (event) => {
-            console.log("Track added:", event.track);
-        }
-      }
-        // Set the incoming stream to the remote video element
-        if (remoteVideoRef.current && stream) {
-          //from here to
-          if (remoteVideoRef.current.srcObject !== stream) {
-            remoteVideoRef.current.srcObject = stream;
-          }
-          // Wait for the previous stream to stop before playing the new one
-          remoteVideoRef.current.onloadedmetadata = () => {
-            remoteVideoRef.current
-              .play()
-              .catch((err) =>
-                console.error("Error playing the remote stream: line 141", err)
-              );
-            //  here , before this code block all thing was working
-            // remoteVideoRef.current.srcObject = stream;
-            // remoteVideoRef.current.play();
-          };
+    //  // Set up the ontrack handler for incoming remote media
+    //   peer.current.ontrack = ({ streams: [stream] }) => {
+    //     setStatus("Incoming Stream");
+    //     console.log("Incoming Stream", stream, remoteVideoRef.current);
+    //     if (stream) {
+    //       stream.getTracks().forEach(track => {
+    //      console.log("Existing track:", track);
+    // });
+    //       stream.onaddtrack = (event) => {
+    //         console.log("Track added:", event.track);
+    //     }
+    //   }
+    //     // Set the incoming stream to the remote video element
+    //     if (remoteVideoRef.current && stream) {
+    //       //from here to
+    //       if (remoteVideoRef.current.srcObject !== stream) {
+    //         remoteVideoRef.current.srcObject = stream;
+    //       }
+    //       // Wait for the previous stream to stop before playing the new one
+    //       remoteVideoRef.current.onloadedmetadata = () => {
+    //         remoteVideoRef.current
+    //           .play()
+    //           .catch((err) =>
+    //             console.error("Error playing the remote stream: line 141", err)
+    //           );
+    //         //  here , before this code block all thing was working
+    //         // remoteVideoRef.current.srcObject = stream;
+    //         // remoteVideoRef.current.play();
+    //       };
          
-        }
-      };
+    //     }
+    //   };
+
+
+    // Event handler for the ontrack event
+peer.current.ontrack = ({ streams: [stream] }) => {
+  setStatus("Incoming Stream");
+  handleIncomingStream(stream, remoteVideoRef);
+};
 
       
       
