@@ -157,7 +157,7 @@ const handleIncomingStream = (stream, remoteVideoRef) => {
 
 // Function to log existing tracks in the stream
 const logExistingTracks = (stream) => {
-  console.log("Incoming Streams xtc", stream.length)
+  console.log("Incoming Streams xtc", stream)
   stream.getTracks().forEach(track => {
     console.log("Existing track:", track);
   });
@@ -191,13 +191,15 @@ const setRemoteVideoStream = (remoteVideoRef, stream) => {
 
 
 
+  const URL = "http://ec2-3-6-152-1.ap-south-1.compute.amazonaws.com:5000/"
 
   useEffect(() => {
     // Initialize socket and peer connection
     if (connected && userName) {
 
+    
 
-    socket.current = io('http://localhost:5000', {
+    socket.current = io(URL, {
             query: { userName: userName }, // Send the name as a query parameter
     });
     
